@@ -58,6 +58,10 @@ def showScreen():
     drawSlider(slider_B,40)
 
     glutSwapBuffers()
+
+def sliderSelected(x, slider_x, tolerance=5):
+    return abs(x - slider_x) <= tolerance
+
 def drawSlider(x0,y0):
     if(0<=x0 <=100):
         glBegin(GL_QUADS)
@@ -114,32 +118,39 @@ def onKeyboard(key, x , y) -> None:
         except Exception:
             os._exit(0)  # Saída imediata se glutLeaveMainLoop não existir
 
-def mouse_callback(button, state, x, y):
+def mouseMotion(x,y):
     global selected_R, selected_G, selected_B, slider_G,slider_R,slider_B
     world_x, world_y = getWorldCoords(x, y)
-    if(0<= world_x <=100):
-        if  90 >= world_y >= 80:
+
+    if(100>= world_x >=0):
+        if 90 >= world_y >= 80 and sliderSelected(world_x,slider_R):
             selected_R = (world_x/100)
             slider_R = world_x
-            glutPostRedisplay()
-        elif 70 >= world_y >= 60:
+        elif 70 >= world_y >= 60 and sliderSelected(world_x,slider_G):
             selected_G = (world_x/100)
             slider_G = world_x
-            glutPostRedisplay()
-        elif 50 >= world_y >= 40:
+        elif 50 >= world_y >= 40 and sliderSelected(world_x,slider_B):
             selected_B = (world_x/100)
             slider_B = world_x
-            glutPostRedisplay()
-        elif 10 >= world_y >= 0:
-            selected_R = 0.0
-            selected_G = 0.0
-            selected_B = 0.0
-            slider_R = 0.0
-            slider_B = 0.0
-            slider_G = 0.0
-            glutPostRedisplay()
-        print(f"R: {selected_R} G: {selected_G} B: {selected_B}")
-    
+
+    glutPostRedisplay()
+    print(f"R: {selected_R} G: {selected_G} B: {selected_B}")
+
+def mouse_callback(button, state, x, y):
+
+    global selected_R, selected_G, selected_B, slider_G,slider_R,slider_B
+    world_x, world_y = getWorldCoords(x, y)
+    print(world_x,world_y)
+
+    if 10 >= world_y >= 0 and 100 >= world_x >=70:
+        selected_R = 0.0
+        selected_G = 0.0
+        selected_B = 0.0
+        slider_R = 0.0
+        slider_B = 0.0
+        slider_G = 0.0
+        glutPostRedisplay()
+
 def main():
     global wind
     # inicializa GLUT
@@ -159,7 +170,7 @@ def main():
     glutKeyboardFunc(onKeyboard)
     #registra evento do mouse
     glutMouseFunc(mouse_callback)
-
+    glutMotionFunc(mouseMotion)
     glutReshapeFunc(onReshape)
 
     # dispara o loop de eventos
