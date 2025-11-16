@@ -75,18 +75,32 @@ def unselect_all_and_clear_modes(keep_selection_mode=False): #Função de limpez
 
 
 def calculate_equilateral_point(p1, p2, mouse_pos): #calcula a terceira vertice do triangulo equilatero
-    x1, y1 = p1; x2, y2 = p2; mx, my = mouse_pos
-    mx_base = (x1 + x2) / 2.0; my_base = (y1 + y2) / 2.0
+    x1, y1 = p1
+    x2, y2 = p2
+    mx, my = mouse_pos
+
+    #ponto medio
+    mx_base = (x1 + x2) / 2.0
+    my_base = (y1 + y2) / 2.0
+    #comprimento do lado
     side_length = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-    if side_length == 0: return x1, y1
+
+    if side_length == 0:
+        return x1, y1
+    #altura
     height = side_length * (math.sqrt(3.0) / 2.0)
-    dx = x2 - x1; dy = y2 - y1
-    if side_length == 0: return mx_base, my_base
 
-    ux = -dy / side_length; uy = dx / side_length
+    dx = x2 - x1
+    dy = y2 - y1
 
-    x3_a = mx_base + height * ux; y3_a = my_base + height * uy
-    x3_b = mx_base - height * ux; y3_b = my_base - height * uy
+    ux = -dy / side_length
+    uy = dx / side_length
+
+    #vertices
+    x3_a = mx_base + height * ux
+    y3_a = my_base + height * uy
+    x3_b = mx_base - height * ux
+    y3_b = my_base - height * uy
 
     dist_a_sq = (mx - x3_a)**2 + (my - y3_a)**2
     dist_b_sq = (mx - x3_b)**2 + (my - y3_b)**2
@@ -97,19 +111,26 @@ def calculate_equilateral_point(p1, p2, mouse_pos): #calcula a terceira vertice 
         return x3_b, y3_b
 
 
-def draw_polygon_from_vertices(vertex_list, R, G, B): #forma o desenho do poligono na tela a partir das linhas
+def draw_polygon_from_vertices(vertex_list, R, G, B):
     num_vertices = len(vertex_list)
+    
+    if num_vertices < 2:
+        return
+        
+    for i in range(num_vertices - 1):
+        x0, y0 = vertex_list[i]
+        x1, y1 = vertex_list[i+1]
+
+        line_obj = Line(x0, y0, x1, y1, R, G, B)
+        line_obj.draw_segment()
+
     if num_vertices >= 2:
-        for i in range(num_vertices - 1):
-            x0, y0 = vertex_list[i]; x1, y1 = vertex_list[i+1]
-            if hasattr(Line(0,0,0,0,0,0,0), 'draw_segment'):
-                Line(x0, y0, x1, y1, R, G, B).draw_segment()
-            else: Line(x0, y0, x1, y1, R, G, B).draw()
-        if num_vertices >= 3:
-            x_last, y_last = vertex_list[-1]; x_first, y_first = vertex_list[0]
-            if hasattr(Line(0,0,0,0,0,0,0), 'draw_segment'):
-                Line(x_last, y_last, x_first, y_first, R, G, B).draw_segment()
-            else: Line(x_last, y_last, x_first, y_first, R, G, B).draw()
+        x_last, y_last = vertex_list[-1]
+        x_first, y_first = vertex_list[0]
+
+        closing_line_obj = Line(x_last, y_last, x_first, y_first, R, G, B)
+        closing_line_obj.draw_segment()
+
 
 
 def showScreen():
@@ -203,7 +224,7 @@ def mouse_Callback(button, state, x, y):
                 raio_circulo_temp = 0.0
                 estado_clique_circulo = 0
                     
-        elif modo_desenho_ativo and poligono:
+        elif poligono:
             vertices_poligono.append((world_x, world_y))
 
         glutPostRedisplay()
@@ -257,53 +278,35 @@ def configure_visualization():
     for retangulo in retangulos_salvos:
         retangulo.draw()
         
-    # Desenha Polígono em Construção
+    # Desenha Polígono 
     num_vertices = len(vertices_poligono)
     if num_vertices >= 2:
         for i in range(num_vertices - 1):
             x0, y0 = vertices_poligono[i]; x1, y1 = vertices_poligono[i+1]
-            if hasattr(Line(0,0,0,0,0,0,0), 'draw_segment'):
-                Line(x0, y0, x1, y1, 1.0, 1.0, 1.0).draw_segment()
-            else: Line(x0, y0, x1, y1, 1.0, 1.0, 1.0).draw()
-            
+            Line(x0, y0, x1, y1, 1.0, 1.0, 1.0).draw_segment()
+
+    # Desenha o poligono em construção 
     if modo_desenho_ativo and poligono and num_vertices >= 1:
         x0_provisorio, y0_provisorio = vertices_poligono[-1]
         x1_provisorio, y1_provisorio = posicao_mouse_atual
-        if hasattr(Line(0,0,0,0,0,0,0), 'draw_segment'):
-            Line(x0_provisorio, y0_provisorio, x1_provisorio, y1_provisorio, 1.0, 0.0, 0.0).draw_segment()
-        else: Line(x0_provisorio, y0_provisorio, x1_provisorio, y1_provisorio, 1.0, 0.0, 0.0).draw()
-
+        Line(x0_provisorio, y0_provisorio, x1_provisorio, y1_provisorio, 1.0, 0.0, 0.0).draw_segment()
 
     # Desenha Círculo em Construção
     if desenho_circulo_ativo and estado_clique_circulo == 1 and centro_circulo_temp is not None:
         cx, cy = centro_circulo_temp; raio = raio_circulo_temp
         Circle(cx, cy, raio, 0.0, 1.0, 1.0).draw()
-        glPointSize(5.0); glColor3f(1.0, 1.0, 1.0)
-        glBegin(GL_POINTS); glVertex2f(cx, cy); glEnd()
-
+    
     # Desenha Triângulo em Construção
     if desenho_triangulo_ativo and estado_clique_triangulo == 1 and p1_triangulo_temp is not None:
         x1, y1 = p1_triangulo_temp; x2, y2 = posicao_mouse_atual
         x3, y3 = calculate_equilateral_point(p1_triangulo_temp, (x2, y2), posicao_mouse_atual)
-        R, G, B = 0.0, 1.0, 0.0
-        
-        if hasattr(Line(0,0,0,0,0,0,0), 'draw_segment'):
-            Line(x1, y1, x2, y2, R, G, B).draw_segment()
-            Line(x2, y2, x3, y3, R, G, B).draw_segment()
-            Line(x3, y3, x1, y1, R, G, B).draw_segment()
-        else:
-            Line(x1, y1, x2, y2, R, G, B).draw(); Line(x2, y2, x3, y3, R, G, B).draw(); Line(x3, y3, x1, y1, R, G, B).draw()
+        Triangle(x1,y1,x2,y2,x3,y3,0,1,0).draw()
         
     # Desenha Retângulo em Construção
     if desenho_retangulo_ativo and estado_clique_retangulo == 1 and p1_retangulo_temp is not None:
         x1, y1 = p1_retangulo_temp; x2, y2 = posicao_mouse_atual
         Rectangle(x1, y1, x2, y2, 0.0, 1.0, 1.0).draw()
         
-    glutMouseFunc(mouse_Callback); glutMotionFunc(motion_Callback); glutPassiveMotionFunc(motion_Callback)
-    
-    glutSpecialFunc(specialKeys) 
-    glutKeyboardFunc(onKeyboard)
-
 
 def getWorldCoords(x,y):
     global left, right, bottom, top
@@ -344,8 +347,7 @@ def specialKeys(key,x,y) -> None:
 
     if dx != 0.0 or dy != 0.0:
         for obj in objetos_selecionados:
-            if hasattr(obj, 'translate'):
-                obj.translate(dx, dy)
+            obj.translate(dx, dy)
 
         glutPostRedisplay()
 
@@ -354,31 +356,45 @@ def onKeyboard(key,x,y) -> None:
     global objetos_selecionados, modo_desenho_ativo, vertices_poligono, poligono, poligonos, \
        desenho_circulo_ativo, estado_clique_circulo, centro_circulo_temp, \
        desenho_triangulo_ativo, estado_clique_triangulo, p1_triangulo_temp, \
-       desenho_retangulo_ativo, estado_clique_retangulo, p1_retangulo_temp, modo_selecao_ativo
+       desenho_retangulo_ativo, estado_clique_retangulo, p1_retangulo_temp, modo_selecao_ativo, \
+       circulos_salvos, triangulos_salvos, retangulos_salvos
 
     if objetos_selecionados:
-        
+
         # ROTAÇÃO
         if key == b'z' or key == b'Z':
             for obj in objetos_selecionados:
-                if hasattr(obj, 'rotation_angle'): obj.rotation_angle += 5.0
-            glutPostRedisplay(); return
+                obj.rotation_angle += 5.0
 
-        elif key == b'x' or key == b'X':
+        if key == b'x' or key == b'X':
             for obj in objetos_selecionados:
-                if hasattr(obj, 'rotation_angle'): obj.rotation_angle -= 5.0
-            glutPostRedisplay(); return
-            
+                obj.rotation_angle -= 5.0
+
         # ESCALA
-        elif key == b'+':
+        if key == b'+':
             for obj in objetos_selecionados:
-                if hasattr(obj, 'scale_factor'): obj.scale_factor *= 1.1 
-            glutPostRedisplay(); return
-        
-        elif key == b'-':
+                obj.scale_factor *= 1.1 
+
+        if key == b'-':
             for obj in objetos_selecionados:
-                if hasattr(obj, 'scale_factor') and obj.scale_factor > 0.1: obj.scale_factor *= 0.9 
-            glutPostRedisplay(); return
+                obj.scale_factor *= 0.9 
+
+        if key == b'd' or key == b'D':
+            for obj in objetos_selecionados:
+                if obj in circulos_salvos:
+                    circulos_salvos.remove(obj)
+                if obj in triangulos_salvos:
+                    triangulos_salvos.remove(obj)
+                if obj in retangulos_salvos:
+                    retangulos_salvos.remove(obj)
+
+            print("Modo Seleção (S): DESATIVADO.")
+            print("Objetos DELETADOS.")
+
+            unselect_all_and_clear_modes(keep_selection_mode=False) 
+
+        glutPostRedisplay() 
+        return
 
 
     if key == b's' or key == b'S':
@@ -389,19 +405,32 @@ def onKeyboard(key,x,y) -> None:
             print("Modo Seleção (S): ATIVADO.")
         else:
             print("Modo Seleção (S): DESATIVADO.")
-            
+
+    if (key == b'p' or key == b'P') and modo_desenho_ativo:
+                if len(vertices_poligono) >= 2: 
+                    poligonos.append(list(vertices_poligono))
+
     # Ativação de desenho
     if key in (b'p', b'P', b'c', b'C', b't', b'T', b'r', b'R'):
-        
-        if (key == b'p' or key == b'P') and modo_desenho_ativo:
-             if len(vertices_poligono) >= 2: poligonos.append(list(vertices_poligono))
-
         unselect_all_and_clear_modes(keep_selection_mode=False) 
         
-        if key == b'p' or key == b'P': modo_desenho_ativo = True; poligono = True; print(b"Modo Desenho Poligono: ATIVADO.")
-        elif key == b'c' or key == b'C': desenho_circulo_ativo = True; print(b"Modo Desenho Circulo: ATIVADO.")
-        elif key == b't' or key == b'T': desenho_triangulo_ativo = True; print(b"Modo Desenho Triangulo: ATIVADO.")
-        elif key == b'r' or key == b'R': desenho_retangulo_ativo = True; print(b"Modo Desenho Retangulo: ATIVADO.")
+
+        if key == b'p' or key == b'P': 
+            modo_desenho_ativo = True
+            poligono = True
+            print(b"Modo Desenho Poligono: ATIVADO.")
+
+        if key == b'c' or key == b'C': 
+            desenho_circulo_ativo = True
+            print(b"Modo Desenho Circulo: ATIVADO.")
+
+        if key == b't' or key == b'T': 
+            desenho_triangulo_ativo = True
+            print(b"Modo Desenho Triangulo: ATIVADO.")
+
+        if key == b'r' or key == b'R': 
+            desenho_retangulo_ativo = True 
+            print(b"Modo Desenho Retangulo: ATIVADO.")
     
     glutPostRedisplay()
 
@@ -416,6 +445,7 @@ def main():
     glutMotionFunc(motion_Callback)
     glutPassiveMotionFunc(motion_Callback)
     glutKeyboardFunc(onKeyboard)
+    glutSpecialFunc(specialKeys) 
     glutDisplayFunc(showScreen)
     glutMainLoop()
 
